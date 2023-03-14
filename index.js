@@ -27,16 +27,16 @@ app.get('/', (req, res) => {
     res.send(ResponseOK);
 })
 
-app.post('/Login', (req, res) => {
+app.post('/Login/:email/:password', (req, res) => {
     const userPoolData = new AWSCognito.CognitoUserPool(PoolData);
 
     const authDetails = new AWSCognito.AuthenticationDetails({
-        Username: req.body.email,
-        Password: req.body.password
+        Username: req.params.email,
+        Password: req.params.password
       });
 
     const cognitoUser = new AWSCognito.CognitoUser({
-        Username: req.body.email,
+        Username: req.params.email,
         Pool: userPoolData
     });
 
@@ -54,14 +54,14 @@ app.post('/Login', (req, res) => {
     });
 });
 
-app.post('/VerifyUser', (req, res) => {
+app.post('/VerifyUser/:email/:verificationCode', (req, res) => {
     const userPoolData = new AWSCognito.CognitoUserPool(PoolData);
     const cognitoUser = new AWSCognito.CognitoUser({
-        Username: req.body.email,
+        Username: req.params.email,
         Pool: userPoolData
     });
 
-    cognitoUser.confirmRegistration(req.body.verificationCode, true, (err, result) => {
+    cognitoUser.confirmRegistration(req.params.verificationCode, true, (err, result) => {
         if(err)
         {
             ResponseBad.body = err;
@@ -77,16 +77,17 @@ app.post('/VerifyUser', (req, res) => {
     });
 });
 
-app.post('/CreateUser', (req, res) => {
+app.post('/CreateUser/:email/:password/:given_name/:family_name/:phone_number', (req, res) => {
+    console.log("Creating user...");
     const userPoolData = new AWSCognito.CognitoUserPool(PoolData);
     let userAttributes = [];
 
-    userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'email', Value: req.body.email}));
-    userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'given_name', Value: req.body.given_name}));
-    userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'family_name', Value: req.body.family_name}));
-    userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'phone_number', Value: req.body.phone_number}));
+    userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'email', Value: req.params.email}));
+    userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'given_name', Value: req.params.given_name}));
+    userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'family_name', Value: req.params.family_name}));
+    userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'phone_number', Value: req.params.phone_number}));
     
-    userPoolData.signUp(req.body.email, req.body.password, userAttributes, [], (err, result) => {
+    userPoolData.signUp(req.params.email, req.params.password, userAttributes, [], (err, result) => {
         if (err) 
         {
           ResponseBad.body = err;
