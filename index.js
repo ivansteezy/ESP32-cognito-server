@@ -23,6 +23,7 @@ const ResponseBad = {
 }
 
 app.get('/', (req, res) => {
+    console.log("Default entry");
     ResponseOK.message = "Hola Syro!";
     res.send(ResponseOK);
 })
