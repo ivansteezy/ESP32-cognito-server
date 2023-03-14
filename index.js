@@ -12,22 +12,70 @@ app.use(express.json());
 
 const ResponseOK = {
     statusCode: 200,
-    headers: {'Content-Type': 'application/json'}, 
-    body: {
-    } 
+    body: {},
+    message: ""
 }
 
 const ResponseBad = {
     statusCode: 400,
-    headers: {'Content-Type': 'application/json'}, 
-    body: {
-    } 
+    body: {},
+    message: "" 
 }
 
 app.get('/', (req, res) => {
-  console.log(req);
-  res.send('Hello Syro TEEEST!');
+    ResponseOK.message = "Hola Syro!";
+    res.send(ResponseOK);
 })
+
+app.post('/Login', (req, res) => {
+    const userPoolData = new AWSCognito.CognitoUserPool(PoolData);
+
+    const authDetails = new AWSCognito.AuthenticationDetails({
+        Username: req.body.email,
+        Password: req.body.password
+      });
+
+    const cognitoUser = new AWSCognito.CognitoUser({
+        Username: req.body.email,
+        Pool: userPoolData
+    });
+
+    cognitoUser.authenticateUser(authDetails, {
+        onSuccess: result => {
+          ResponseOK.body = result;
+          ResponseOK.message = "Bienvenido al sistema!";
+          res.send(ResponseOK);
+        },
+        onFailure: err => {
+          ResponseBad.body = err;
+          ResponseBad.message = "Error tratando de ingresar con el usuario"
+          res.send(ResponseBad);
+        }
+    });
+});
+
+app.post('/VerifyUser', (req, res) => {
+    const userPoolData = new AWSCognito.CognitoUserPool(PoolData);
+    const cognitoUser = new AWSCognito.CognitoUser({
+        Username: req.body.email,
+        Pool: userPoolData
+    });
+
+    cognitoUser.confirmRegistration(req.body.verificationCode, true, (err, result) => {
+        if(err)
+        {
+            ResponseBad.body = err;
+            ResponseBad.message = "Error tratando de verificar el usuario"
+            res.send(ResponseBad);
+        }
+        else
+        {
+            ResponseOK.body = result;
+            ResponseOK.message = "Usuario verificado con exito!";
+            res.send(ResponseOK);
+        }
+    });
+});
 
 app.post('/CreateUser', (req, res) => {
     const userPoolData = new AWSCognito.CognitoUserPool(PoolData);
@@ -37,30 +85,24 @@ app.post('/CreateUser', (req, res) => {
     userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'given_name', Value: req.body.given_name}));
     userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'family_name', Value: req.body.family_name}));
     userAttributes.push(new AWSCognito.CognitoUserAttribute({Name: 'phone_number', Value: req.body.phone_number}));
-
-    console.log(userAttributes);
     
     userPoolData.signUp(req.body.email, req.body.password, userAttributes, [], (err, result) => {
         if (err) 
         {
-          console.error('Error Signing up user: ', req.body.email);
-          console.error('With password: ', req.body.password);
-          
-          console.log("Error!!");
-          console.log(err);
-
-
           ResponseBad.body = err;
+          ResponseBad.message = "Error tratando de registrar el usuario"
           res.send(ResponseBad);
         }
         else 
         {
-          console.info('User: ', req.body.email, 'Signed up!');
           ResponseOK.body = result;
+          ResponseOK.message = "Usuario registado con exito!";
           res.send(ResponseOK);
         }
       });
 })
+
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
